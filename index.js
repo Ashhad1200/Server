@@ -9,7 +9,7 @@ const MONGODB_URI =
 const DB_NAME = "logsDB";
 const COLLECTION_NAME = "logs";
 
-const client = new MongoClient(MONGODB_URI, { useUnifiedTopology: true });
+const client = new MongoClient(MONGODB_URI);
 
 // Connect to MongoDB
 async function connectToDB() {
@@ -56,6 +56,7 @@ const getLocationFromIp = (ip) => {
 
 // Create HTTP server
 const server = http.createServer(async (req, res) => {
+  res.setHeader("Content-Type", "text/html");
   const clientIp = getClientIp(req);
   const locationData = await getLocationFromIp(clientIp);
 
@@ -70,13 +71,19 @@ const server = http.createServer(async (req, res) => {
   };
 
   // Send HTML response
-  res.setHeader("Content-Type", "text/html");
   res.writeHead(200);
   res.end(`
         <html>
+            <head>
+                <title>Location Server</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    h1 { color: #333; }
+                </style>
+            </head>
             <body>
                 <h1>This is the message from the server</h1>
-                <p>${new Date().toISOString()}</p>
+                <p>Request Time: ${new Date().toISOString()}</p>
                 <p>${locationInfo}</p>
             </body>
         </html>
