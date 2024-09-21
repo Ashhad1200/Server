@@ -15,6 +15,7 @@ const client = new MongoClient(MONGODB_URI);
 async function connectToDB() {
   try {
     await client.connect();
+    console.log("Connected to MongoDB");
     return client.db(DB_NAME).collection(COLLECTION_NAME);
   } catch (err) {
     console.error("Error connecting to MongoDB:", err);
@@ -56,7 +57,6 @@ const getLocationFromIp = (ip) => {
 
 // Create HTTP server
 const server = http.createServer(async (req, res) => {
-  res.setHeader("Content-Type", "text/html");
   const clientIp = getClientIp(req);
   const locationData = await getLocationFromIp(clientIp);
 
@@ -71,7 +71,7 @@ const server = http.createServer(async (req, res) => {
   };
 
   // Send HTML response
-  res.writeHead(200);
+  res.writeHead(200, { "Content-Type": "text/html" });
   res.end(`
         <html>
             <head>
