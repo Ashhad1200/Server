@@ -5,25 +5,25 @@ const { MongoClient } = require("mongodb");
 const port = process.env.PORT || 8001;
 const MONGODB_URI =
   process.env.MONGODB_URI ||
-  "mongodb+srv://ashhad:ashhad123@logs.y9wpq.mongodb.net/logsDB?retryWrites=true&w=majority&appName=logs";
+  "mongodb+srv://ashhad:ashhad123@logs.y9wpq.mongodb.net/?retryWrites=true&w=majority&appName=logs";
 const DB_NAME = "logsDB";
 const COLLECTION_NAME = "logs";
 
-// Initialize MongoClient without deprecated options
 const client = new MongoClient(MONGODB_URI);
-
 let logsCollection;
 
-// Connect to MongoDB (with retry)
+// Connect to MongoDB
 async function connectToDB() {
-  if (logsCollection) return logsCollection; // Return cached collection if already connected
+  if (logsCollection) return logsCollection; // Use existing collection if already connected
+
   try {
+    console.log("Attempting to connect to MongoDB...");
     await client.connect();
-    console.log("Connected to MongoDB");
+    console.log("Connected to MongoDB successfully.");
     logsCollection = client.db(DB_NAME).collection(COLLECTION_NAME);
     return logsCollection;
   } catch (err) {
-    console.error("Error connecting to MongoDB:", err);
+    console.error("Error connecting to MongoDB:", err); // Log connection error
     throw err;
   }
 }
@@ -51,15 +51,15 @@ const getLocationFromIp = (ip) => {
 
         response.on("end", () => {
           try {
-            resolve(JSON.parse(data));
+            resolve(JSON.parse(data)); // Parse JSON data
           } catch (error) {
-            console.error("Error parsing location data:", error);
+            console.error("Error parsing location data:", error); // Log parsing error
             resolve(null);
           }
         });
       })
       .on("error", (err) => {
-        console.error("Error fetching location data:", err);
+        console.error("Error fetching location data from IP:", err); // Log fetching error
         resolve(null);
       });
   });
@@ -68,11 +68,15 @@ const getLocationFromIp = (ip) => {
 // Create HTTP server
 const server = http.createServer(async (req, res) => {
   const clientIp = getClientIp(req);
+  console.log("Received request from IP:", clientIp); // Log the client's IP
+
   const locationData = await getLocationFromIp(clientIp);
 
   const locationInfo = locationData
     ? `Location: ${locationData.city}, ${locationData.region}, ${locationData.country}`
     : "Location: Unable to fetch location";
+
+  console.log("Location data for IP:", clientIp, locationInfo); // Log location data
 
   const logEntry = {
     requestTime: new Date(),
@@ -99,13 +103,13 @@ const server = http.createServer(async (req, res) => {
         </html>
     `);
 
-  // Store log entry in MongoDB
   try {
+    console.log("Attempting to insert log into MongoDB..."); // Log attempt to insert
     const logsCollection = await connectToDB();
     await logsCollection.insertOne(logEntry);
-    console.log("Log stored in MongoDB:", logEntry);
+    console.log("Log stored in MongoDB:", logEntry); // Log success
   } catch (err) {
-    console.error("Error storing log in MongoDB:", err);
+    console.error("Error storing log in MongoDB:", err); // Log insertion error
   }
 });
 
