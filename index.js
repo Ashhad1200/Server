@@ -5,18 +5,23 @@ const { MongoClient } = require("mongodb");
 const port = process.env.PORT || 8001;
 const MONGODB_URI =
   process.env.MONGODB_URI ||
-  "mongodb+srv://ashhad:ashhad123@logs.y9wpq.mongodb.net/?retryWrites=true&w=majority&appName=logs";
+  "mongodb+srv://ashhad:ashhad123@logs.y9wpq.mongodb.net/logsDB?retryWrites=true&w=majority&appName=logs";
 const DB_NAME = "logsDB";
 const COLLECTION_NAME = "logs";
 
+// Initialize MongoClient without deprecated options
 const client = new MongoClient(MONGODB_URI);
 
-// Connect to MongoDB
+let logsCollection;
+
+// Connect to MongoDB (with retry)
 async function connectToDB() {
+  if (logsCollection) return logsCollection; // Return cached collection if already connected
   try {
     await client.connect();
     console.log("Connected to MongoDB");
-    return client.db(DB_NAME).collection(COLLECTION_NAME);
+    logsCollection = client.db(DB_NAME).collection(COLLECTION_NAME);
+    return logsCollection;
   } catch (err) {
     console.error("Error connecting to MongoDB:", err);
     throw err;
@@ -45,7 +50,12 @@ const getLocationFromIp = (ip) => {
         });
 
         response.on("end", () => {
-          resolve(JSON.parse(data));
+          try {
+            resolve(JSON.parse(data));
+          } catch (error) {
+            console.error("Error parsing location data:", error);
+            resolve(null);
+          }
         });
       })
       .on("error", (err) => {
